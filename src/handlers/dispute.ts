@@ -1,15 +1,47 @@
 import { Composer } from "grammy";
+import type { Ctx } from "../bot.js";
+import { inlineButton, inlineKeyboard } from "../toolkit/index.js";
+import { getStore } from "../store.js";
 
-// SCAFFOLD — generated from the bot blueprint BEFORE the agent runs.
-// Keep a LIVE registration (.command / .callbackQuery / …) so this feature is
-// never an empty stub. Replace the reply body with real logic + copy; if you
-// change the user-facing text, update tests/specs to match EXACTLY.
-// Do NOT rewrite src/bot.ts — buildBot() already auto-loads this module.
+const composer = new Composer<Ctx>();
 
-const composer = new Composer();
+const backToMenu = inlineKeyboard([[inlineButton("⬅️ Back to menu", "menu:main")]]);
+
+composer.callbackQuery("dispute:start", async (ctx) => {
+  await ctx.answerCallbackQuery();
+  const userId = ctx.from?.id;
+  if (!userId) return;
+  const store = getStore();
+  const user = await store.getUser(userId);
+  if (!user) {
+    await ctx.editMessageText(
+      "You haven't signed up yet. Tap /start to create your account.",
+      { reply_markup: backToMenu },
+    );
+    return;
+  }
+  ctx.session.step = "dispute_details";
+  await ctx.editMessageText(
+    "Describe your issue. Include any relevant details — transaction ID, date, or amount.",
+  );
+});
 
 composer.command("dispute", async (ctx) => {
-  await ctx.reply("Submit a dispute with optional attachments");
+  const userId = ctx.from?.id;
+  if (!userId) return;
+  const store = getStore();
+  const user = await store.getUser(userId);
+  if (!user) {
+    await ctx.reply(
+      "You haven't signed up yet. Tap /start to create your account.",
+      { reply_markup: backToMenu },
+    );
+    return;
+  }
+  ctx.session.step = "dispute_details";
+  await ctx.reply(
+    "Describe your issue. Include any relevant details — transaction ID, date, or amount.",
+  );
 });
 
 export default composer;
