@@ -1,19 +1,33 @@
 [
   {
-    "name": "/dispute",
+    "name": "/dispute shows sign-up prompt for new users",
     "steps": [
       {
+        "send": { "text": "/dispute" },
         "expect": [
           {
             "method": "sendMessage",
             "payload": {
-              "text": "Submit a dispute with optional attachments"
+              "text": "You haven't signed up yet. Tap /start to create your account."
             }
           }
-        ],
-        "send": {
-          "text": "/dispute"
-        }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "dispute:start callback shows sign-up prompt for new users",
+    "steps": [
+      {
+        "send": { "callback": "dispute:start" },
+        "expect": [
+          {
+            "method": "editMessageText",
+            "payload": {
+              "text": "You haven't signed up yet. Tap /start to create your account."
+            }
+          }
+        ]
       }
     ]
   }

@@ -1,19 +1,33 @@
 [
   {
-    "name": "/withdraw",
+    "name": "/withdraw shows sign-up prompt for new users",
     "steps": [
       {
+        "send": { "text": "/withdraw" },
         "expect": [
           {
             "method": "sendMessage",
             "payload": {
-              "text": "Initiate withdrawal request to configured PayPal/bank"
+              "text": "You haven't signed up yet. Tap /start to create your account."
             }
           }
-        ],
-        "send": {
-          "text": "/withdraw"
-        }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "withdraw:start callback shows sign-up prompt for new users",
+    "steps": [
+      {
+        "send": { "callback": "withdraw:start" },
+        "expect": [
+          {
+            "method": "editMessageText",
+            "payload": {
+              "text": "You haven't signed up yet. Tap /start to create your account."
+            }
+          }
+        ]
       }
     ]
   }

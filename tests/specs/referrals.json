@@ -1,19 +1,33 @@
 [
   {
-    "name": "/referrals",
+    "name": "/referrals shows sign-up prompt for new users",
     "steps": [
       {
+        "send": { "text": "/referrals" },
         "expect": [
           {
             "method": "sendMessage",
             "payload": {
-              "text": "View referral earnings and share code"
+              "text": "You haven't signed up yet. Tap /start to create your account."
             }
           }
-        ],
-        "send": {
-          "text": "/referrals"
-        }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "referrals:show callback shows sign-up prompt for new users",
+    "steps": [
+      {
+        "send": { "callback": "referrals:show" },
+        "expect": [
+          {
+            "method": "editMessageText",
+            "payload": {
+              "text": "You haven't signed up yet. Tap /start to create your account."
+            }
+          }
+        ]
       }
     ]
   }

@@ -1,15 +1,97 @@
 import { Composer } from "grammy";
+import type { Ctx } from "../bot.js";
+import { inlineButton, inlineKeyboard } from "../toolkit/index.js";
+import { getStore } from "../store.js";
 
-// SCAFFOLD — generated from the bot blueprint BEFORE the agent runs.
-// Keep a LIVE registration (.command / .callbackQuery / …) so this feature is
-// never an empty stub. Replace the reply body with real logic + copy; if you
-// change the user-facing text, update tests/specs to match EXACTLY.
-// Do NOT rewrite src/bot.ts — buildBot() already auto-loads this module.
+const composer = new Composer<Ctx>();
 
-const composer = new Composer();
+const backToMenu = inlineKeyboard([[inlineButton("⬅️ Back to menu", "menu:main")]]);
+
+composer.callbackQuery("balance:show", async (ctx) => {
+  await ctx.answerCallbackQuery();
+  const userId = ctx.from?.id;
+  if (!userId) return;
+  const store = getStore();
+  const user = await store.getUser(userId);
+  if (!user) {
+    await ctx.editMessageText(
+      "You haven't signed up yet. Tap /start to create your account.",
+      { reply_markup: inlineKeyboard([[inlineButton("⬅️ Back to menu", "menu:main")]]) },
+    );
+    return;
+  }
+
+  const sessions = await store.getUserSessions(userId);
+  const totalMinutes = sessions
+    .filter((s) => s.status === "credited" || s.status === "completed")
+    .reduce((sum, s) => sum + s.minutes_counted, 0);
+
+  const txns = await store.getUserTransactions(userId);
+  const totalEarnings = txns
+    .filter((t) => t.type === "earning")
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const totalCommissions = txns
+    .filter((t) => t.type === "commission")
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const miners = await store.getMinersForAffiliate(userId);
+
+  const lines = [
+    `💰 Balance: $${user.balance.toFixed(2)}`,
+    ``,
+    `Total mined: ${totalMinutes} minutes ($${totalEarnings.toFixed(2)})`,
+    `Commission earned: $${totalCommissions.toFixed(2)}`,
+  ];
+
+  if (user.role === "affiliate" || user.role === "both") {
+    lines.push(`Referred miners: ${miners.length}`);
+  }
+
+  await ctx.editMessageText(lines.join("\n"), { reply_markup: backToMenu });
+});
 
 composer.command("balance", async (ctx) => {
-  await ctx.reply("Display current earnings balance and referral stats");
+  const userId = ctx.from?.id;
+  if (!userId) return;
+  const store = getStore();
+  const user = await store.getUser(userId);
+  if (!user) {
+    await ctx.reply(
+      "You haven't signed up yet. Tap /start to create your account.",
+      { reply_markup: backToMenu },
+    );
+    return;
+  }
+
+  const sessions = await store.getUserSessions(userId);
+  const totalMinutes = sessions
+    .filter((s) => s.status === "credited" || s.status === "completed")
+    .reduce((sum, s) => sum + s.minutes_counted, 0);
+
+  const txns = await store.getUserTransactions(userId);
+  const totalEarnings = txns
+    .filter((t) => t.type === "earning")
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const totalCommissions = txns
+    .filter((t) => t.type === "commission")
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const miners = await store.getMinersForAffiliate(userId);
+
+  const lines = [
+    `💰 Balance: $${user.balance.toFixed(2)}`,
+    ``,
+    `Total mined: ${totalMinutes} minutes ($${totalEarnings.toFixed(2)})`,
+    `Commission earned: $${totalCommissions.toFixed(2)}`,
+  ];
+
+  if (user.role === "affiliate" || user.role === "both") {
+    lines.push(`Referred miners: ${miners.length}`);
+  }
+
+  await ctx.reply(lines.join("\n"), { reply_markup: backToMenu });
 });
 
 export default composer;
